@@ -2,15 +2,15 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/Beretta350/golang-rest-template/internal/app/user/model"
+	"github.com/Beretta350/golang-rest-template/internal/pkg/errs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type UserRepository interface {
+type UserMongoRepository interface {
 	GetAll(ctx context.Context) ([]model.User, error)
 	GetByID(ctx context.Context, id string) (*model.User, error)
 	Create(ctx context.Context, user *model.User) error
@@ -18,19 +18,19 @@ type UserRepository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-type userRepository struct {
+type userMongoRepository struct {
 	collection *mongo.Collection
 }
 
-func NewUserRepository(d *mongo.Database) UserRepository {
-	return &userRepository{collection: d.Collection("user")}
+func NewUserRepository(d *mongo.Database) UserMongoRepository {
+	return &userMongoRepository{collection: d.Collection("user")}
 }
 
-func (r *userRepository) GetAll(ctx context.Context) ([]model.User, error) {
+func (r *userMongoRepository) GetAll(ctx context.Context) ([]model.User, error) {
 	var users []model.User
 	cursor, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
-		return nil, fmt.Errorf("error fetching users: %v", err)
+		return nil, errs.ErrFindingUsers.SetDetail(err)
 	}
 	defer cursor.Close(ctx)
 
@@ -39,6 +39,8 @@ func (r *userRepository) GetAll(ctx context.Context) ([]model.User, error) {
 		if err := cursor.Decode(&user); err != nil {
 			return nil, err
 		}
+		user.Password = ""
+		user.Id = ""
 		users = append(users, user)
 	}
 
@@ -49,31 +51,31 @@ func (r *userRepository) GetAll(ctx context.Context) ([]model.User, error) {
 	return users, nil
 }
 
-func (r *userRepository) GetByID(ctx context.Context, id string) (*model.User, error) {
+func (r *userMongoRepository) GetByID(ctx context.Context, id string) (*model.User, error) {
 	var user model.User
 	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
-		return nil, fmt.Errorf("user not found")
+		return nil, errs.ErrUserNotFound
 	} else if err != nil {
-		return nil, fmt.Errorf("error fetching user by id: %v", err)
+		return nil, errs.ErrFindingUserByID.SetDetail(err)
 	}
 
 	return &user, nil
 }
 
-func (r *userRepository) Create(ctx context.Context, user *model.User) error {
+func (r *userMongoRepository) Create(ctx context.Context, user *model.User) error {
 	user.CreateAt = time.Now()
 	user.UpdateAt = time.Now()
 
 	_, err := r.collection.InsertOne(ctx, user)
 	if err != nil {
-		return fmt.Errorf("error creating user: %v", err)
+		return errs.ErrCreatingUser.SetDetail(err)
 	}
 
 	return nil
 }
 
-func (r *userRepository) Update(ctx context.Context, user *model.User) error {
+func (r *userMongoRepository) Update(ctx context.Context, user *model.User) error {
 	user.UpdateAt = time.Now()
 
 	filter := bson.M{"_id": user.Id}
@@ -85,16 +87,16 @@ func (r *userRepository) Update(ctx context.Context, user *model.User) error {
 
 	_, err := r.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return fmt.Errorf("error updating user: %v", err)
+		return errs.ErrUpdatingUser.SetDetail(err)
 	}
 
 	return nil
 }
 
-func (r *userRepository) Delete(ctx context.Context, id string) error {
+func (r *userMongoRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.collection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
-		return fmt.Errorf("error deleting user: %v", err)
+		return errs.ErrDeletingUser.SetDetail(err)
 	}
 
 	return nil

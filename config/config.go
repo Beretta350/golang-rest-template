@@ -2,6 +2,8 @@ package config
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/joho/godotenv"
 )
@@ -26,9 +28,15 @@ type DatabaseConfig struct {
 	Name     string
 }
 
+var (
+	_, b, _, _ = runtime.Caller(0)
+	basepath   = filepath.Dir(b)
+)
+
 // LoadConfig loads the configuration from a .env file
 func LoadConfig(env string) (*Config, error) {
-	if err := godotenv.Load(env); err != nil {
+	configPath := filepath.Join(basepath, env+".env")
+	if err := godotenv.Load(configPath); err != nil {
 		return nil, err
 	}
 

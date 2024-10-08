@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
 	"github.com/Beretta350/golang-rest-template/config"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,12 +25,13 @@ func InitDatabase(cfg *config.DatabaseConfig) (*sql.DB, *mongo.Database, error) 
 		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Name)
 		sqlDB, err = sql.Open("postgres", dsn)
 	case "mongodb":
-		uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
+		uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/", cfg.User, cfg.Password, cfg.Host, cfg.Port)
 		mongoClient, err = mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
 	default:
 		return nil, nil, fmt.Errorf("unsupported database type: %s", cfg.Type)
 	}
 
+	log.Printf("Establishing connection with %v database\n", cfg.Type)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -41,6 +43,7 @@ func InitDatabase(cfg *config.DatabaseConfig) (*sql.DB, *mongo.Database, error) 
 		}
 	}
 	if mongoClient != nil {
+
 		if err = mongoClient.Ping(context.Background(), nil); err != nil {
 			return nil, nil, err
 		}

@@ -15,7 +15,7 @@ services:
             - DB_PASSWORD=root
             - DB_NAME=rest-template
         depends_on:
-            - mongodb
+            - mongodatabase
         ports:
             - 8080:8080
 
