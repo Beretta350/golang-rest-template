@@ -56,8 +56,14 @@ func (h *userHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *userHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	vars := mux.Vars(r)
+	id := vars["id"]
+
 	var user model.User
 	json.NewDecoder(r.Body).Decode(&user)
+
+	user.Id = id
 
 	err := h.serv.UpdateUser(ctx, &user)
 	if err != nil {

@@ -2,9 +2,10 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/Beretta350/golang-rest-template/internal/app/common/constants"
+	"github.com/Beretta350/golang-rest-template/internal/app/common/logging"
 	"github.com/Beretta350/golang-rest-template/internal/app/user/model"
 	"github.com/Beretta350/golang-rest-template/internal/pkg/errs"
 	"go.mongodb.org/mongo-driver/bson"
@@ -31,7 +32,8 @@ func (r *userMongoRepository) GetAllUsers(ctx context.Context) ([]model.User, er
 	var users []model.User
 	cursor, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
-		return nil, errs.ErrFindingUsers.SetDetail(err)
+		logging.LogError(ctx, "repository", "GetAllUsers", err)
+		return nil, errs.ErrFindingUsers.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 	defer cursor.Close(ctx)
 
@@ -58,7 +60,8 @@ func (r *userMongoRepository) GetUserByID(ctx context.Context, id string) (*mode
 	if err == mongo.ErrNoDocuments {
 		return nil, errs.ErrUserNotFound
 	} else if err != nil {
-		return nil, errs.ErrFindingUserByID.SetDetail(err)
+		logging.LogError(ctx, "repository", "GetUserByID", err)
+		return nil, errs.ErrFindingUserByID.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
 	return &user, nil
@@ -70,7 +73,8 @@ func (r *userMongoRepository) CreateUser(ctx context.Context, user *model.User) 
 
 	_, err := r.collection.InsertOne(ctx, user)
 	if err != nil {
-		return errs.ErrCreatingUser.SetDetail(err)
+		logging.LogError(ctx, "repository", "CreateUser", err)
+		return errs.ErrCreatingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
 	return nil
@@ -88,7 +92,8 @@ func (r *userMongoRepository) UpdateUser(ctx context.Context, user *model.User) 
 
 	_, err := r.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		return errs.ErrUpdatingUser.SetDetail(err)
+		logging.LogError(ctx, "repository", "UpdateUser", err)
+		return errs.ErrUpdatingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
 	return nil
@@ -97,11 +102,12 @@ func (r *userMongoRepository) UpdateUser(ctx context.Context, user *model.User) 
 func (r *userMongoRepository) DeleteUser(ctx context.Context, id string) error {
 	result, err := r.collection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
-		return errs.ErrDeletingUser.SetDetail(err)
+		logging.LogError(ctx, "repository", "DeleteUser", err)
+		return errs.ErrDeletingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
 	if result.DeletedCount == 0 {
-		return errs.ErrDeletingUser.SetDetail(errors.New("no users to delete"))
+		return errs.ErrDeletingUser.SetDetailFromString(constants.NoUsersToDelete)
 	}
 
 	return nil

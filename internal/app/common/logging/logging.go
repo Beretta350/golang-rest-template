@@ -73,14 +73,20 @@ func LogService(ctx context.Context, method, message string, args ...interface{}
 	log.Println(sb.String())
 }
 
-// LogService: logs messages with a standard format for the service package
-func LogError(ctx context.Context, method string, err error) {
+// LogError: logs messages with a standard format for the service package
+func LogServiceError(ctx context.Context, method string, err error) {
+	LogError(ctx, "service", method, err)
+}
+
+func LogError(ctx context.Context, packg string, method string, err error) {
 	var sb strings.Builder
 
 	// Build the log message
 	sb.WriteString("context=")
 	sb.WriteString(fmt.Sprintf("%v", ctx.Value(constants.RequestIDKey)))
-	sb.WriteString(" package=service method=")
+	sb.WriteString(" package=")
+	sb.WriteString(packg)
+	sb.WriteString(" method=")
 	sb.WriteString(method)
 	sb.WriteString(" timestamp=")
 	sb.WriteString(time.Now().Format(time.RFC3339))

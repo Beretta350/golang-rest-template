@@ -31,7 +31,7 @@ func (s *userService) GetAllUsers(ctx context.Context) ([]model.User, error) {
 	logging.LogService(ctx, "GetAllUsers", "attempting to retrieve all users")
 	users, err := s.repo.GetAllUsers(ctx)
 	if err != nil {
-		logging.LogError(ctx, "GetAllUsers", err)
+		logging.LogServiceError(ctx, "GetAllUsers", err)
 		return nil, err
 	}
 	logging.LogService(ctx, "GetAllUsers", "successfully retrieved %d users", len(users))
@@ -43,7 +43,7 @@ func (s *userService) GetUserByID(ctx context.Context, id string) (*model.User, 
 	logging.LogService(ctx, "GetUserByID", "attempting to retrieve user with ID: %v", id)
 	user, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {
-		logging.LogError(ctx, "GetUserByID", err)
+		logging.LogServiceError(ctx, "GetUserByID", err)
 		return nil, err
 	}
 
@@ -56,20 +56,20 @@ func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
 	logging.LogService(ctx, "CreateUser", "attempting to create a new user with username: %v", user.Username)
 	user.Id = uuid.NewString()
 	if err := user.Validate(); err != nil {
-		logging.LogError(ctx, "CreateUser", err)
+		logging.LogServiceError(ctx, "CreateUser", err)
 		return err
 	}
 
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		logging.LogError(ctx, "CreateUser", err)
+		logging.LogServiceError(ctx, "CreateUser", err)
 		return err
 	}
 	user.Password = string(hashedPassword) // Store the hashed password
 
 	if err = s.repo.CreateUser(ctx, user); err != nil {
-		logging.LogError(ctx, "CreateUser", err)
+		logging.LogServiceError(ctx, "CreateUser", err)
 		return err
 	}
 
@@ -83,19 +83,20 @@ func (s *userService) UpdateUser(ctx context.Context, newUser *model.User) error
 	logging.LogService(ctx, "UpdateUser", "attempting to update user with ID: %v", newUser.Id)
 	existentUser, err := s.GetUserByID(ctx, newUser.Id)
 	if err != nil {
-		logging.LogError(ctx, "UpdateUser", err)
+		logging.LogServiceError(ctx, "UpdateUser", err)
 		return err
 	}
 
-	if newUser.Password != "" { // Only hash if a new password is provided
+	// Only hash if a new password is provided
+	if newUser.Password != "" {
 		if err = newUser.Validate(); err != nil {
-			logging.LogError(ctx, "UpdateUser", err)
+			logging.LogServiceError(ctx, "UpdateUser", err)
 			return err
 		}
 
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 		if err != nil {
-			logging.LogError(ctx, "UpdateUser", err)
+			logging.LogServiceError(ctx, "UpdateUser", err)
 			return err
 		}
 		newUser.Password = string(hashedPassword)
@@ -105,7 +106,7 @@ func (s *userService) UpdateUser(ctx context.Context, newUser *model.User) error
 	}
 
 	if err = s.repo.UpdateUser(ctx, newUser); err != nil {
-		logging.LogError(ctx, "UpdateUser", err)
+		logging.LogServiceError(ctx, "UpdateUser", err)
 		return err
 	}
 
@@ -119,7 +120,7 @@ func (s *userService) DeleteUser(ctx context.Context, id string) error {
 
 	err := s.repo.DeleteUser(ctx, id)
 	if err != nil {
-		logging.LogError(ctx, "DeleteUser", err)
+		logging.LogServiceError(ctx, "DeleteUser", err)
 		return err
 	}
 

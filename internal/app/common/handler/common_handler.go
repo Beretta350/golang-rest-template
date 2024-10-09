@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Beretta350/golang-rest-template/internal/pkg/errs"
+	"github.com/go-playground/validator/v10"
 )
 
 func Respond(w http.ResponseWriter, code int, src interface{}) {
@@ -15,8 +16,14 @@ func Respond(w http.ResponseWriter, code int, src interface{}) {
 
 func Error(w http.ResponseWriter, err error) {
 	code := http.StatusInternalServerError
-	if value, ok := err.(*errs.CustomError); ok {
-		code = value.Code.StatusCode()
+
+	switch e := err.(type) {
+	case *errs.CustomError:
+		code = e.Code.StatusCode()
+	case *validator.ValidationErrors, validator.ValidationErrors:
+		customErr := errs.ErrValidatingUser.SetDetail(e)
+		code = customErr.Code.StatusCode()
+		err = customErr
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
