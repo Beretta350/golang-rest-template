@@ -10,6 +10,7 @@ import (
 	"github.com/Beretta350/golang-rest-template/internal/app/user/repository"
 	"github.com/Beretta350/golang-rest-template/internal/app/user/service"
 	"github.com/Beretta350/golang-rest-template/internal/pkg/database"
+	"github.com/Beretta350/golang-rest-template/pkg/logging"
 )
 
 func Run(env string) {
@@ -28,6 +29,7 @@ func Run(env string) {
 		log.Fatalln("Error establishing connection to database:", err.Error())
 	}
 
+	_ = logging.NewLogger()
 	userRepo := repository.NewUserRepository(mongodb)
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Beretta350/golang-rest-template/internal/pkg/errs"
+	"github.com/Beretta350/golang-rest-template/pkg/errs"
 	"github.com/go-playground/validator/v10"
 )
 

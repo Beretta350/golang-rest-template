@@ -6,28 +6,36 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
-
-	"github.com/Beretta350/golang-rest-template/internal/app/common/constants"
 )
 
-// LogEntry defines the structure for our log output
-type LogRequestEntry struct {
-	ContextID    string    `json:"context"`
-	Package      string    `json:"package"`
-	Method       string    `json:"method"`
-	Message      string    `json:"message,omitempty"`
-	URL          string    `json:"url,omitempty"`
-	RemoteAddr   string    `json:"remote_addr,omitempty"`
-	UserAgent    string    `json:"user_agent,omitempty"`
-	StatusCode   int       `json:"status_code,omitempty"`
-	ResponseTime string    `json:"response_time,omitempty"`
-	QueryParams  string    `json:"query_params,omitempty"`
-	Timestamp    time.Time `json:"timestamp"`
+type Logger interface {
+	LogRequest(entry LogRequestEntry)
+	LogInternal(ctx context.Context, packg, method, message string, args ...interface{})
+	LogError(ctx context.Context, packg, method string, err error)
+}
+
+type logger struct{}
+
+var instance *logger
+var once sync.Once
+
+// NewLogger creates a new logger instance (singleton)
+func NewLogger() Logger {
+	once.Do(func() {
+		instance = &logger{}
+	})
+	return instance
+}
+
+// GetLogger gets the logger instance
+func GetLogger() Logger {
+	return instance
 }
 
 // LogRequest: logs messages with a standard format for the handler package
-func LogRequest(entry LogRequestEntry) {
+func (l *logger) LogRequest(entry LogRequestEntry) {
 	var sb strings.Builder
 
 	// Start building the log message
@@ -48,21 +56,26 @@ func LogRequest(entry LogRequestEntry) {
 	sb.WriteString(strconv.Itoa(entry.StatusCode))
 	sb.WriteString(" response_time=")
 	sb.WriteString(entry.ResponseTime)
-	sb.WriteString(" query_params=")
-	sb.WriteString(entry.QueryParams)
+
+	if entry.QueryParams != "" {
+		sb.WriteString(" query_params=")
+		sb.WriteString(entry.QueryParams)
+	}
 
 	// Log the final string
 	log.Println(sb.String())
 }
 
 // LogService: logs messages with a standard format for the service package
-func LogService(ctx context.Context, method, message string, args ...interface{}) {
+func (l *logger) LogInternal(ctx context.Context, packg, method, message string, args ...interface{}) {
 	var sb strings.Builder
 
 	// Build the log message
 	sb.WriteString("context=")
-	sb.WriteString(fmt.Sprintf("%v", ctx.Value(constants.RequestIDKey)))
-	sb.WriteString(" package=service method=")
+	sb.WriteString(fmt.Sprintf("%v", ctx.Value(ContextIDKey)))
+	sb.WriteString(" package=")
+	sb.WriteString(packg)
+	sb.WriteString(" method=")
 	sb.WriteString(method)
 	sb.WriteString(" timestamp=")
 	sb.WriteString(time.Now().Format(time.RFC3339))
@@ -73,17 +86,12 @@ func LogService(ctx context.Context, method, message string, args ...interface{}
 	log.Println(sb.String())
 }
 
-// LogError: logs messages with a standard format for the service package
-func LogServiceError(ctx context.Context, method string, err error) {
-	LogError(ctx, "service", method, err)
-}
-
-func LogError(ctx context.Context, packg string, method string, err error) {
+func (l *logger) LogError(ctx context.Context, packg, method string, err error) {
 	var sb strings.Builder
 
 	// Build the log message
 	sb.WriteString("context=")
-	sb.WriteString(fmt.Sprintf("%v", ctx.Value(constants.RequestIDKey)))
+	sb.WriteString(fmt.Sprintf("%v", ctx.Value(ContextIDKey)))
 	sb.WriteString(" package=")
 	sb.WriteString(packg)
 	sb.WriteString(" method=")

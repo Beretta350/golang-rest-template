@@ -25,6 +25,11 @@ func (u User) Validate() error {
 	return validate.Struct(u)
 }
 
+func (u User) ValidateUsername() error {
+	validate := validator.New()
+	return validate.StructPartial(u, "Username")
+}
+
 func (u User) ValidatePassword() error {
 	validate := validator.New()
 	return validate.StructPartial(u, "Password")

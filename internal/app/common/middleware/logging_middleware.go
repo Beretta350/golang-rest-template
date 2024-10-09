@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Beretta350/golang-rest-template/internal/app/common/constants"
-	"github.com/Beretta350/golang-rest-template/internal/app/common/logging"
+	"github.com/Beretta350/golang-rest-template/pkg/logging"
 	"github.com/google/uuid"
 )
 
@@ -35,7 +34,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		// Wrap the ResponseWriter to capture the status code
 		crw := &CustomResponseWriter{ResponseWriter: w, StatusCode: http.StatusOK}
 
-		ctx := context.WithValue(r.Context(), constants.RequestIDKey, requestID)
+		ctx := context.WithValue(r.Context(), logging.ContextIDKey, requestID)
 		r = r.WithContext(ctx)
 
 		// Call the next handler
@@ -58,6 +57,6 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Log in structured JSON format
-		logging.LogRequest(logEntry)
+		logging.GetLogger().LogRequest(logEntry)
 	})
 }
