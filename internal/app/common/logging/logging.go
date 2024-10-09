@@ -12,7 +12,7 @@ import (
 )
 
 // LogEntry defines the structure for our log output
-type LogEntry struct {
+type LogRequestEntry struct {
 	ContextID    string    `json:"context"`
 	Package      string    `json:"package"`
 	Method       string    `json:"method"`
@@ -27,7 +27,7 @@ type LogEntry struct {
 }
 
 // LogRequest: logs messages with a standard format for the handler package
-func LogRequest(entry LogEntry) {
+func LogRequest(entry LogRequestEntry) {
 	var sb strings.Builder
 
 	// Start building the log message

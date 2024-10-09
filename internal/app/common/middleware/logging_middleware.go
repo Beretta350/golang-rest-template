@@ -45,7 +45,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		duration := time.Since(start)
 
 		// Build log entry
-		logEntry := logging.LogEntry{
+		logEntry := logging.LogRequestEntry{
 			ContextID:    requestID,
 			Timestamp:    start,
 			Method:       r.Method,
