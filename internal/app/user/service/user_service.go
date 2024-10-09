@@ -73,6 +73,7 @@ func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
 		return err
 	}
 
+	user.Password = ""
 	logging.LogService(ctx, "CreateUser", "user created successfully: %v", user.Username)
 	return nil
 }
