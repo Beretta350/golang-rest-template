@@ -1,6 +1,7 @@
 package errs
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -28,7 +29,7 @@ func (e *CustomError) SetDetail(err error) *CustomError {
 // Error implements the error interface for CustomError
 func (e *CustomError) Error() string {
 	if e.Err != nil {
-		return fmt.Sprintf("error: %s, details: %v", e.Message, e.Err)
+		return fmt.Sprintf("error: %s details: %v", e.Message, e.Err)
 	}
 	return fmt.Sprintf("error: %s", e.Message)
 }
@@ -36,6 +37,19 @@ func (e *CustomError) Error() string {
 // Unwrap allows errors.Is and errors.As to work with CustomError
 func (e *CustomError) Unwrap() error {
 	return e.Err
+}
+
+func (e *CustomError) MarshalJSON() ([]byte, error) {
+	type Alias CustomError // Create an alias to avoid recursion
+
+	// Marshal the error field as a string if it's not nil
+	return json.Marshal(&struct {
+		*Alias
+		Err string `json:"detail,omitempty"`
+	}{
+		Alias: (*Alias)(e),
+		Err:   e.Err.Error(),
+	})
 }
 
 // NewCustomError creates a new CustomError

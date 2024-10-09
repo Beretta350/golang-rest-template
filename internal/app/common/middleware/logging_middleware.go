@@ -1,8 +1,13 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"time"
+
+	"github.com/Beretta350/golang-rest-template/internal/app/common/constants"
+	"github.com/Beretta350/golang-rest-template/internal/app/common/logging"
+	"github.com/google/uuid"
 )
 
 type CustomResponseWriter struct {
@@ -22,10 +27,16 @@ func (w *CustomResponseWriter) Write(b []byte) (int, error) {
 // LoggingMiddleware logs incoming requests and outgoing responses
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Generate a unique request ID
+		requestID := uuid.New().String()
+
 		start := time.Now()
 
 		// Wrap the ResponseWriter to capture the status code
 		crw := &CustomResponseWriter{ResponseWriter: w, StatusCode: http.StatusOK}
+
+		ctx := context.WithValue(r.Context(), constants.RequestIDKey, requestID)
+		r = r.WithContext(ctx)
 
 		// Call the next handler
 		next.ServeHTTP(crw, r)
@@ -34,7 +45,8 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		duration := time.Since(start)
 
 		// Build log entry
-		logEntry := LogEntry{
+		logEntry := logging.LogEntry{
+			ContextID:    requestID,
 			Timestamp:    start,
 			Method:       r.Method,
 			URL:          r.URL.Path,
@@ -46,6 +58,6 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Log in structured JSON format
-		logRequest(logEntry)
+		logging.LogRequest(logEntry)
 	})
 }

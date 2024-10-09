@@ -27,64 +27,68 @@ func NewUserHandler(s service.UserService) UserHandler {
 }
 
 func (h *userHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var user model.User
 	json.NewDecoder(r.Body).Decode(&user)
 
-	err := h.serv.Create(r.Context(), &user)
+	err := h.serv.CreateUser(ctx, &user)
 	if err != nil {
-		commonHandler.HttpError(w, err)
+		commonHandler.Error(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	commonHandler.Respond(w, http.StatusCreated, user)
 }
 
 func (h *userHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	user, err := h.serv.GetByID(r.Context(), id)
+	user, err := h.serv.GetUserByID(ctx, id)
 	if err != nil {
-		commonHandler.HttpError(w, err)
+		commonHandler.Error(w, err)
 		return
 	}
 
-	json.NewEncoder(w).Encode(user)
+	commonHandler.Respond(w, http.StatusOK, user)
 }
 
 func (h *userHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	var user model.User
 	json.NewDecoder(r.Body).Decode(&user)
 
-	err := h.serv.Update(r.Context(), &user)
+	err := h.serv.UpdateUser(ctx, &user)
 	if err != nil {
-		commonHandler.HttpError(w, err)
+		commonHandler.Error(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	commonHandler.Respond(w, http.StatusOK, nil)
 }
 
 func (h *userHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	err := h.serv.Delete(r.Context(), id)
+	err := h.serv.DeleteUser(ctx, id)
 	if err != nil {
-		commonHandler.HttpError(w, err)
+		commonHandler.Error(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	commonHandler.Respond(w, http.StatusOK, nil)
 }
 
 func (h *userHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	users, err := h.serv.GetAll(r.Context())
+	ctx := r.Context()
+	users, err := h.serv.GetAllUsers(ctx)
 	if err != nil {
-		commonHandler.HttpError(w, err)
+		commonHandler.Error(w, err)
 		return
 	}
 
-	json.NewEncoder(w).Encode(users)
+	commonHandler.Respond(w, http.StatusOK, users)
 }
