@@ -12,11 +12,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// UserRepository defines the methods for user data access.
 type UserRepository interface {
+	// GetAllUsers retrieves all users from the database.
 	GetAllUsers(ctx context.Context) ([]model.User, error)
+	// GetUserByID retrieves a user by their ID.
 	GetUserByID(ctx context.Context, id string) (*model.User, error)
+	// CreateUser adds a new user to the database.
 	CreateUser(ctx context.Context, user *model.User) error
+	// UpdateUser modifies an existing user's details.
 	UpdateUser(ctx context.Context, user *model.User) error
+	// DeleteUser removes a user from the database.
 	DeleteUser(ctx context.Context, id string) error
 }
 
