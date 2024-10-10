@@ -21,10 +21,10 @@ type UserService interface {
 var log logging.Logger = logging.GetLogger()
 
 type userService struct {
-	repo repository.UserMongoRepository
+	repo repository.UserRepository
 }
 
-func NewUserService(repo repository.UserMongoRepository) UserService {
+func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 

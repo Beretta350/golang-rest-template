@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type UserMongoRepository interface {
+type UserRepository interface {
 	GetAllUsers(ctx context.Context) ([]model.User, error)
 	GetUserByID(ctx context.Context, id string) (*model.User, error)
 	CreateUser(ctx context.Context, user *model.User) error
@@ -22,15 +22,15 @@ type UserMongoRepository interface {
 
 var log logging.Logger = logging.GetLogger()
 
-type userMongoRepository struct {
+type userRepository struct {
 	collection *mongo.Collection
 }
 
-func NewUserRepository(d *mongo.Database) UserMongoRepository {
-	return &userMongoRepository{collection: d.Collection("user")}
+func NewUserRepository(d *mongo.Database) UserRepository {
+	return &userRepository{collection: d.Collection("user")}
 }
 
-func (r *userMongoRepository) GetAllUsers(ctx context.Context) ([]model.User, error) {
+func (r *userRepository) GetAllUsers(ctx context.Context) ([]model.User, error) {
 	var users []model.User
 	cursor, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
@@ -56,7 +56,7 @@ func (r *userMongoRepository) GetAllUsers(ctx context.Context) ([]model.User, er
 	return users, nil
 }
 
-func (r *userMongoRepository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
+func (r *userRepository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	var user model.User
 	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
@@ -69,7 +69,7 @@ func (r *userMongoRepository) GetUserByID(ctx context.Context, id string) (*mode
 	return &user, nil
 }
 
-func (r *userMongoRepository) CreateUser(ctx context.Context, user *model.User) error {
+func (r *userRepository) CreateUser(ctx context.Context, user *model.User) error {
 	user.CreateAt = time.Now()
 	user.UpdateAt = time.Now()
 
@@ -82,7 +82,7 @@ func (r *userMongoRepository) CreateUser(ctx context.Context, user *model.User) 
 	return nil
 }
 
-func (r *userMongoRepository) UpdateUser(ctx context.Context, user *model.User) error {
+func (r *userRepository) UpdateUser(ctx context.Context, user *model.User) error {
 	user.UpdateAt = time.Now()
 
 	filter := bson.M{"_id": user.Id}
@@ -101,7 +101,7 @@ func (r *userMongoRepository) UpdateUser(ctx context.Context, user *model.User) 
 	return nil
 }
 
-func (r *userMongoRepository) DeleteUser(ctx context.Context, id string) error {
+func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
 	result, err := r.collection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
 		log.LogError(ctx, "repository", "DeleteUser", err)
