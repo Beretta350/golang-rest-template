@@ -11,10 +11,15 @@ import (
 )
 
 type UserService interface {
+	// GetAll retrieves all users
 	GetAllUsers(ctx context.Context) ([]model.User, error)
+	// GetUserByID retrieves a user by ID and verifies the password
 	GetUserByID(ctx context.Context, id string) (*model.User, error)
+	// CreateUser hashes the user's password and stores the user in the repository
 	CreateUser(ctx context.Context, user *model.User) error
+	// UpdateUser hashes the new password if it's provided, then updates the user
 	UpdateUser(ctx context.Context, user *model.User) error
+	// DeleteUser removes a user by ID
 	DeleteUser(ctx context.Context, id string) error
 }
 
@@ -28,7 +33,6 @@ func NewUserService(repo repository.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-// GetAll retrieves all users
 func (s *userService) GetAllUsers(ctx context.Context) ([]model.User, error) {
 	log.LogInternal(ctx, "service", "GetAllUsers", "attempting to retrieve all users")
 	users, err := s.repo.GetAllUsers(ctx)
@@ -40,7 +44,6 @@ func (s *userService) GetAllUsers(ctx context.Context) ([]model.User, error) {
 	return users, nil
 }
 
-// GetUserByID retrieves a user by ID and verifies the password
 func (s *userService) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	log.LogInternal(ctx, "service", "GetUserByID", "attempting to retrieve user with ID: %v", id)
 	if err := uuid.Validate(id); err != nil {
@@ -58,7 +61,6 @@ func (s *userService) GetUserByID(ctx context.Context, id string) (*model.User, 
 	return user, nil
 }
 
-// CreateUser hashes the user's password and stores the user in the repository
 func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
 	log.LogInternal(ctx, "service", "CreateUser", "attempting to create a new user with username: %v", user.Username)
 	user.Id = uuid.NewString()
@@ -85,7 +87,6 @@ func (s *userService) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-// UpdateUser hashes the new password if it's provided, then updates the user
 func (s *userService) UpdateUser(ctx context.Context, newUser *model.User) error {
 	log.LogInternal(ctx, "service", "UpdateUser", "attempting to update user with ID: %v", newUser.Id)
 	existentUser, err := s.GetUserByID(ctx, newUser.Id)
@@ -125,7 +126,6 @@ func (s *userService) UpdateUser(ctx context.Context, newUser *model.User) error
 	return nil
 }
 
-// DeleteUser removes a user by ID
 func (s *userService) DeleteUser(ctx context.Context, id string) error {
 	log.LogInternal(ctx, "service", "DeleteUser", "attempting to delete user with ID: %v", id)
 	if err := uuid.Validate(id); err != nil {

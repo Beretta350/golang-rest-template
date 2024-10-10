@@ -10,11 +10,26 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// UserHandler defines the HTTP handlers for user-related operations.
 type UserHandler interface {
+	// CreateUser handles the HTTP request for creating a new user.
+	// It reads user data from the request body and responds with the created user.
 	CreateUser(w http.ResponseWriter, r *http.Request)
+
+	// GetUser handles the HTTP request to retrieve a user by their unique identifier (ID).
+	// It expects the user ID to be provided in the URL and responds with the user data.
 	GetUser(w http.ResponseWriter, r *http.Request)
+
+	// UpdateUser handles the HTTP request for updating an existing user's information.
+	// It reads the updated user data from the request body and responds with the updated user details.
 	UpdateUser(w http.ResponseWriter, r *http.Request)
+
+	// DeleteUser handles the HTTP request to remove a user by their unique identifier (ID).
+	// It expects the user ID to be provided in the URL and responds with a success or error message.
 	DeleteUser(w http.ResponseWriter, r *http.Request)
+
+	// GetAllUsers handles the HTTP request to retrieve a list of all users.
+	// It responds with an array of user data.
 	GetAllUsers(w http.ResponseWriter, r *http.Request)
 }
 
