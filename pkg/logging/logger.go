@@ -11,12 +11,14 @@ import (
 )
 
 type Logger interface {
-	LogRequest(entry LogRequestEntry)
+	LogRequest(entry *LogRequestEntry)
 	LogInternal(ctx context.Context, packg, method, message string, args ...interface{})
 	LogError(ctx context.Context, packg, method string, err error)
 }
 
-type logger struct{}
+type logger struct {
+	timestampFormat string
+}
 
 var instance *logger
 var once sync.Once
@@ -24,7 +26,9 @@ var once sync.Once
 // NewLogger creates a new logger instance (singleton)
 func NewLogger() Logger {
 	once.Do(func() {
-		instance = &logger{}
+		instance = &logger{
+			timestampFormat: time.RFC3339Nano,
+		}
 	})
 	return instance
 }
@@ -34,18 +38,23 @@ func GetLogger() Logger {
 	return instance
 }
 
-// LogRequest: logs messages with a standard format for the handler package
-func (l *logger) LogRequest(entry LogRequestEntry) {
+// LogRequest logs messages with a standard format for requests
+func (l *logger) LogRequest(entry *LogRequestEntry) {
 	var sb strings.Builder
+
+	if entry.Package == "" {
+		entry.Package = string(defaultPackage)
+	}
 
 	// Start building the log message
 	sb.WriteString("context=")
 	sb.WriteString(entry.ContextID)
-	sb.WriteString(" package=handler")
+	sb.WriteString(" package=")
+	sb.WriteString(entry.Package)
 	sb.WriteString(" method=")
 	sb.WriteString(entry.Method)
 	sb.WriteString(" timestamp=")
-	sb.WriteString(entry.Timestamp.Format(time.RFC3339))
+	sb.WriteString(entry.Timestamp.Format(instance.timestampFormat))
 	sb.WriteString(" url=")
 	sb.WriteString(entry.URL)
 	sb.WriteString(" remote_addr=")
@@ -66,7 +75,7 @@ func (l *logger) LogRequest(entry LogRequestEntry) {
 	log.Println(sb.String())
 }
 
-// LogService: logs messages with a standard format for the service package
+// LogInternal logs messages with a standard format for the internal packages
 func (l *logger) LogInternal(ctx context.Context, packg, method, message string, args ...interface{}) {
 	var sb strings.Builder
 
@@ -78,7 +87,7 @@ func (l *logger) LogInternal(ctx context.Context, packg, method, message string,
 	sb.WriteString(" method=")
 	sb.WriteString(method)
 	sb.WriteString(" timestamp=")
-	sb.WriteString(time.Now().Format(time.RFC3339))
+	sb.WriteString(time.Now().Format(instance.timestampFormat))
 	sb.WriteString(" ")
 	sb.WriteString(formatMessage(message, args...))
 
@@ -86,6 +95,7 @@ func (l *logger) LogInternal(ctx context.Context, packg, method, message string,
 	log.Println(sb.String())
 }
 
+// LogError logs messages with a standard format for the errors
 func (l *logger) LogError(ctx context.Context, packg, method string, err error) {
 	var sb strings.Builder
 
@@ -97,7 +107,7 @@ func (l *logger) LogError(ctx context.Context, packg, method string, err error) 
 	sb.WriteString(" method=")
 	sb.WriteString(method)
 	sb.WriteString(" timestamp=")
-	sb.WriteString(time.Now().Format(time.RFC3339))
+	sb.WriteString(time.Now().Format(instance.timestampFormat))
 	sb.WriteString(" ")
 	sb.WriteString(err.Error()) // Convert the error to string
 
@@ -105,7 +115,7 @@ func (l *logger) LogError(ctx context.Context, packg, method string, err error) 
 	log.Println(sb.String())
 }
 
-// Helper function to format the message
+// Helper function to format message
 func formatMessage(message string, args ...interface{}) string {
 	return fmt.Sprintf(message, args...)
 }

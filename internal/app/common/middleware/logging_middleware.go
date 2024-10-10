@@ -44,17 +44,13 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		duration := time.Since(start)
 
 		// Build log entry
-		logEntry := logging.LogRequestEntry{
-			ContextID:    requestID,
-			Timestamp:    start,
-			Method:       r.Method,
-			URL:          r.URL.Path,
-			RemoteAddr:   r.RemoteAddr,
-			UserAgent:    r.UserAgent(),
-			StatusCode:   crw.StatusCode,
-			ResponseTime: duration.String(),
-			QueryParams:  r.URL.RawQuery,
-		}
+		logEntry := logging.NewLogRequestEntry(requestID, r.Method, start).
+			WithURL(r.URL.Path).
+			WithRemoteAddr(r.RemoteAddr).
+			WithUserAgent(r.UserAgent()).
+			WithStatusCode(crw.StatusCode).
+			WithResponseTime(duration.String()).
+			WithQueryParams(r.URL.RawQuery)
 
 		// Log in structured JSON format
 		logging.GetLogger().LogRequest(logEntry)
