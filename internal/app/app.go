@@ -24,13 +24,16 @@ func Run(env string) {
 		log.Fatalln("Error loading config:", err.Error())
 	}
 
-	_, mongodb, err := database.InitDatabase(&cfg.Database)
+	//Returns: sqlDb, mongoDb, errors
+	_, _, err = database.InitDatabase(&cfg.Database)
 	if err != nil {
 		log.Fatalln("Error establishing connection to database:", err.Error())
 	}
 
 	_ = logging.NewLogger()
-	userRepo := repository.NewUserRepository(mongodb)
+
+	//Placeholder: You need to pass the database connection as parameter for the repository.
+	userRepo := repository.NewUserRepository( /* mongodb */ )
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)
 
