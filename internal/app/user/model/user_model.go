@@ -8,7 +8,7 @@ import (
 )
 
 type User struct {
-	Id        string    `bson:"_id,omitempty" db:"id" json:"id,omitempty" validate:"uuid"`
+	Id        string    `bson:"_id" db:"id" json:"id,omitempty" validate:"uuid"`
 	Username  string    `bson:"username" db:"username" json:"username" validate:"required,min=3"`
 	Password  string    `bson:"password" db:"password" json:"password,omitempty" validate:"required,min=8"`
 	CreatedAt time.Time `bson:"createdAt" db:"created_at" json:"createdAt"`
