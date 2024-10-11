@@ -44,6 +44,7 @@ func LoadConfig(env string) (*Config, error) {
 		Server: ServerConfig{
 			Port: getEnv("SERVER_PORT", "8080"),
 		},
+		// Placeholder: here you need to change the database default configs
 		Database: DatabaseConfig{
 			Type:     getEnv("DB_TYPE", "mysql"),
 			Host:     getEnv("DB_HOST", "localhost"),

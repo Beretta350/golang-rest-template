@@ -1,0 +1,38 @@
+version: '3.7'
+
+services:
+    app:
+        container_name: rest-template
+        build:
+            context: ../
+        environment:
+            - SERVER_PORT=8080
+            - DB_TYPE=postgres
+            - DB_HOST=postgresdatabase
+            - DB_PORT=5432
+            - DB_USER=root
+            - DB_PASSWORD=root
+            - DB_NAME=rest-template
+        depends_on:
+            - postgresdatabase
+        ports:
+            - 8080:8080
+
+    postgresdatabase:
+        image: postgres:latest
+        container_name: postgresdatabase
+        restart: always
+        environment:
+            POSTGRES_USER: root
+            POSTGRES_PASSWORD: root
+            POSTGRES_DB: rest-template
+        ports:
+            - 5432:5432
+        volumes:
+            - ./database/data/postgres:/var/lib/postgresql/data
+            - ../scripts/database/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql:ro
+        healthcheck:
+          test: [ "CMD-SHELL", "sh -c 'pg_isready -U root -d rest-template'" ]
+          interval: 10s
+          timeout: 5s
+          retries: 3

@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+    app:
+        container_name: rest-template
+        build:
+            context: ../
+        environment:
+            - SERVER_PORT=8080
+            - DB_TYPE=mysql
+            - DB_HOST=mysqldatabase
+            - DB_PORT=3306
+            - DB_USER=root
+            - DB_PASSWORD=root
+            - DB_NAME=rest-template
+        depends_on:
+            - mysqldatabase
+        ports:
+            - 8080:8080
+
+    mysqldatabase:
+        image: mysql:latest
+        container_name: mysqldatabase
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: rest-template
+        ports:
+            - 3306:3306
+        volumes:
+            - ./database/data/mysql:/var/lib/mysql
+            - ../scripts/database/mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql:ro
+        healthcheck:
+            test: [ "CMD-SHELL", "mysqladmin ping -h localhost -u root --password=root" ]
+            interval: 10s
+            timeout: 5s
+            retries: 3

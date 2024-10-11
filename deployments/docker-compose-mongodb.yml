@@ -7,7 +7,6 @@ services:
             context: .
         environment:
             - SERVER_PORT=8080
-            - SERVER_MODE=debug
             - DB_TYPE=mongodb
             - DB_HOST=mongodatabase
             - DB_PORT=27017

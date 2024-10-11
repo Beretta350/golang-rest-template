@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log"
 
+	// Placeholder: include the driver you want to use here
+	// Example: _ "github.com/go-sql-driver/mysql"
+
 	"github.com/Beretta350/golang-rest-template/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,6 +21,7 @@ func InitDatabase(cfg *config.DatabaseConfig) (*sql.DB, *mongo.Database, error) 
 	var err error
 
 	switch cfg.Type {
+	//Placeholder: Put it the database connection creation here.
 	case "mysql":
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
 		sqlDB, err = sql.Open("mysql", dsn)
