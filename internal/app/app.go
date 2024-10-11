@@ -32,7 +32,6 @@ func Run(env string) {
 
 	_ = logging.NewLogger()
 
-	//Placeholder: You need to pass the database connection as parameter for the repository.
 	userRepo := repository.NewUserRepository(sqldb)
 	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService)

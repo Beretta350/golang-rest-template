@@ -13,3 +13,4 @@ CREATE TABLE IF NOT EXISTS users (
 -- Insert the first user (admin) if it doesn't already exist
 INSERT INTO users (username, password)
 VALUES ('admin', '$2a$12$FEcwl6m6XDfKM9grMoaVTOi0a45oRf1/FJNzzYeQhreLM3oKXL11G');
+ON CONFLICT (username) DO NOTHING; -- Avoid duplicate insertions
