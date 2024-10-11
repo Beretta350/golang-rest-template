@@ -8,11 +8,11 @@ import (
 )
 
 type User struct {
-	Id       string    `bson:"_id,omitempty" json:"id,omitempty" validate:"uuid"`
-	Username string    `bson:"username" json:"username" validate:"required,min=3"`
-	Password string    `bson:"password" json:"password,omitempty" validate:"required,min=8"`
-	CreateAt time.Time `bson:"createAt" json:"createAt"`
-	UpdateAt time.Time `bson:"updateAt" json:"updateAt"`
+	Id        string    `bson:"_id,omitempty" db:"id" json:"id,omitempty" validate:"uuid"`
+	Username  string    `bson:"username" db:"username" json:"username" validate:"required,min=3"`
+	Password  string    `bson:"password" db:"password" json:"password,omitempty" validate:"required,min=8"`
+	CreatedAt time.Time `bson:"createdAt" db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `bson:"updatedAt" db:"updated_at" json:"updatedAt"`
 }
 
 func NewUserModel(username, password string) *User {

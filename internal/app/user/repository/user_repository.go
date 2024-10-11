@@ -2,9 +2,12 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
+	"github.com/Beretta350/golang-rest-template/internal/app/common/constants"
 	"github.com/Beretta350/golang-rest-template/internal/app/user/model"
+	"github.com/Beretta350/golang-rest-template/pkg/errs"
 	"github.com/Beretta350/golang-rest-template/pkg/logging"
 )
 
@@ -22,64 +25,102 @@ type UserRepository interface {
 	DeleteUser(ctx context.Context, id string) error
 }
 
-var log logging.Logger = logging.GetLogger()
-
+// userRepository is the SQL-based implementation.
 type userRepository struct {
-	// Placeholder: Include any database-specific attributes (e.g., collection or database).
-	// Example: collection *mongo.Collection
+	db  *sql.DB
+	log logging.Logger
 }
 
-func NewUserRepository( /* d *mongo.Database */ ) UserRepository {
-	return &userRepository{
-		//collection: d.Collection("user"),
-	}
+// NewSQLUserRepository creates a new instance of userRepository.
+func NewUserRepository(db *sql.DB) UserRepository {
+	return &userRepository{db: db, log: logging.GetLogger()}
 }
 
-// GetAllUsers retrieves all users from the data source.
 func (r *userRepository) GetAllUsers(ctx context.Context) ([]model.User, error) {
 	var users []model.User
+	rows, err := r.db.QueryContext(ctx, "SELECT username, created_at, updated_at FROM users")
+	if err != nil {
+		r.log.LogError(ctx, "repository", "GetAllUsers", err)
+		return nil, errs.ErrFindingUsers.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
+	}
+	defer rows.Close()
 
-	log.LogInternal(ctx, "repository", "GetAllUsers", "Retrieving all users")
-	// Placeholder: Replace with database logic to fetch all users.
+	for rows.Next() {
+		var user model.User
+		if err := rows.Scan(&user.Username, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			r.log.LogError(ctx, "repository", "GetAllUsers", err)
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		r.log.LogError(ctx, "repository", "GetAllUsers", err)
+		return nil, err
+	}
 
 	return users, nil
 }
 
-// GetUserByID retrieves a user by their ID from the data source.
 func (r *userRepository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	var user model.User
-
-	log.LogInternal(ctx, "repository", "GetUserByID", "Retrieving user by ID", id)
-	// Placeholder: Replace with database logic to fetch a user by ID.
+	err := r.db.
+		QueryRowContext(ctx, "SELECT id, username, created_at, updated_at FROM users WHERE id= $1", id).
+		Scan(&user.Id, &user.Username, &user.CreatedAt, &user.UpdatedAt)
+	if err == sql.ErrNoRows {
+		r.log.LogError(ctx, "repository", "GetUserByID", errs.ErrUserNotFound)
+		return nil, errs.ErrUserNotFound
+	} else if err != nil {
+		r.log.LogError(ctx, "repository", "GetUserByID", err)
+		return nil, errs.ErrFindingUserByID.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
+	}
 
 	return &user, nil
 }
 
-// CreateUser adds a new user to the data source.
 func (r *userRepository) CreateUser(ctx context.Context, user *model.User) error {
-	user.CreateAt = time.Now()
-	user.UpdateAt = time.Now()
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 
-	log.LogInternal(ctx, "repository", "CreateUser", "Creating user", user)
-	// Placeholder: Replace with database logic to create a new user.
+	_, err := r.db.ExecContext(ctx,
+		"INSERT INTO users (id, username, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)",
+		user.Id, user.Username, user.Password, user.CreatedAt, user.UpdatedAt,
+	)
+	if err != nil {
+		r.log.LogError(ctx, "repository", "CreateUser", err)
+		return errs.ErrCreatingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
+	}
 
 	return nil
 }
 
-// UpdateUser modifies an existing user's details in the data source.
 func (r *userRepository) UpdateUser(ctx context.Context, user *model.User) error {
-	user.UpdateAt = time.Now()
+	user.UpdatedAt = time.Now()
 
-	log.LogInternal(ctx, "repository", "UpdateUser", "Updating user", user)
-	// Placeholder: Replace with database logic to update the user.
+	_, err := r.db.ExecContext(ctx,
+		"UPDATE users SET username = $1, password = $2, updated_at = $3 WHERE id = $4",
+		user.Username, user.Password, user.UpdatedAt, user.Id,
+	)
+	if err != nil {
+		r.log.LogError(ctx, "repository", "UpdateUser", err)
+		return errs.ErrUpdatingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
+	}
 
 	return nil
 }
 
-// DeleteUser removes a user from the data source.
 func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
-	log.LogInternal(ctx, "repository", "DeleteUser", "Deleting user by ID", id)
-	// Placeholder: Replace with database logic to delete a user.
+	result, err := r.db.ExecContext(ctx, "DELETE FROM users WHERE id = $1", id)
+	if err != nil {
+		r.log.LogError(ctx, "repository", "DeleteUser", err)
+		return errs.ErrDeletingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		r.log.LogError(ctx, "repository", "DeleteUser", errs.ErrUserNotFound)
+		return errs.ErrDeletingUser.SetDetailFromString(constants.NoUsersToDelete)
+	}
 
 	return nil
 }
