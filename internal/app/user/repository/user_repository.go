@@ -49,14 +49,14 @@ func (r *userRepository) GetAllUsers(ctx context.Context) ([]model.User, error) 
 		var user model.User
 		if err := rows.Scan(&user.Username, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			r.log.LogError(ctx, "repository", "GetAllUsers", err)
-			return nil, err
+			return nil, errs.ErrFindingUserByID.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 		}
 		users = append(users, user)
 	}
 
 	if err := rows.Err(); err != nil {
 		r.log.LogError(ctx, "repository", "GetAllUsers", err)
-		return nil, err
+		return nil, errs.ErrFindingUserByID.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
 	return users, nil
