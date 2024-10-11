@@ -11,8 +11,8 @@ const user = {
     _id: uuid,
     username: "admin",
     password: "$2a$12$FEcwl6m6XDfKM9grMoaVTOi0a45oRf1/FJNzzYeQhreLM3oKXL11G",
-    createAt: new Date(),
-    updateAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
 }
 
 // Switch to the target database
