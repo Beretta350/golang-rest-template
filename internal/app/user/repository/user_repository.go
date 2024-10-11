@@ -26,21 +26,20 @@ type UserRepository interface {
 	DeleteUser(ctx context.Context, id string) error
 }
 
-var log logging.Logger = logging.GetLogger()
-
 type userRepository struct {
 	collection *mongo.Collection
+	log        logging.Logger
 }
 
 func NewUserRepository(d *mongo.Database) UserRepository {
-	return &userRepository{collection: d.Collection("user")}
+	return &userRepository{collection: d.Collection("user"), log: logging.GetLogger()}
 }
 
 func (r *userRepository) GetAllUsers(ctx context.Context) ([]model.User, error) {
 	var users []model.User
 	cursor, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
-		log.LogError(ctx, "repository", "GetAllUsers", err)
+		r.log.LogError(ctx, "repository", "GetAllUsers", err)
 		return nil, errs.ErrFindingUsers.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 	defer cursor.Close(ctx)
@@ -68,7 +67,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, id string) (*model.Use
 	if err == mongo.ErrNoDocuments {
 		return nil, errs.ErrUserNotFound
 	} else if err != nil {
-		log.LogError(ctx, "repository", "GetUserByID", err)
+		r.log.LogError(ctx, "repository", "GetUserByID", err)
 		return nil, errs.ErrFindingUserByID.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
@@ -76,12 +75,12 @@ func (r *userRepository) GetUserByID(ctx context.Context, id string) (*model.Use
 }
 
 func (r *userRepository) CreateUser(ctx context.Context, user *model.User) error {
-	user.CreateAt = time.Now()
-	user.UpdateAt = time.Now()
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 
 	_, err := r.collection.InsertOne(ctx, user)
 	if err != nil {
-		log.LogError(ctx, "repository", "CreateUser", err)
+		r.log.LogError(ctx, "repository", "CreateUser", err)
 		return errs.ErrCreatingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
@@ -89,18 +88,18 @@ func (r *userRepository) CreateUser(ctx context.Context, user *model.User) error
 }
 
 func (r *userRepository) UpdateUser(ctx context.Context, user *model.User) error {
-	user.UpdateAt = time.Now()
+	user.UpdatedAt = time.Now()
 
 	filter := bson.M{"_id": user.Id}
 	update := bson.M{"$set": bson.M{
 		"username":  user.Username,
 		"password":  user.Password,
-		"update_at": user.UpdateAt,
+		"update_at": user.UpdatedAt,
 	}}
 
 	_, err := r.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		log.LogError(ctx, "repository", "UpdateUser", err)
+		r.log.LogError(ctx, "repository", "UpdateUser", err)
 		return errs.ErrUpdatingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
@@ -110,7 +109,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, user *model.User) error
 func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
 	result, err := r.collection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
-		log.LogError(ctx, "repository", "DeleteUser", err)
+		r.log.LogError(ctx, "repository", "DeleteUser", err)
 		return errs.ErrDeletingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 

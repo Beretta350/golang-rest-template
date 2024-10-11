@@ -24,7 +24,7 @@ func Run(env string) {
 		log.Fatalln("Error loading config:", err.Error())
 	}
 
-	_, mongodb, err := database.InitDatabase(&cfg.Database)
+	mongodb, err := database.InitDatabase(&cfg.Database)
 	if err != nil {
 		log.Fatalln("Error establishing connection to database:", err.Error())
 	}

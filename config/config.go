@@ -45,9 +45,9 @@ func LoadConfig(env string) (*Config, error) {
 			Port: getEnv("SERVER_PORT", "8080"),
 		},
 		Database: DatabaseConfig{
-			Type:     getEnv("DB_TYPE", "mysql"),
+			Type:     getEnv("DB_TYPE", "mongodb"),
 			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "3306"),
+			Port:     getEnv("DB_PORT", "27017"),
 			User:     getEnv("DB_USER", "root"),
 			Password: getEnv("DB_PASSWORD", "root"),
 			Name:     getEnv("DB_NAME", "rest-template"),
