@@ -47,16 +47,24 @@ func (r *userRepository) GetAllUsers(ctx context.Context) ([]model.User, error) 
 
 	for rows.Next() {
 		var user model.User
-		if err := rows.Scan(&user.Username, &user.CreatedAt, &user.UpdatedAt); err != nil {
+		var createdAtRaw []uint8
+		var updatedAtRaw []uint8
+		if err := rows.Scan(&user.Username, &createdAtRaw, &updatedAtRaw); err != nil {
 			r.log.LogError(ctx, "repository", "GetAllUsers", err)
-			return nil, err
+			return nil, errs.ErrFindingUsers.SetDetailFromString(constants.ParsingError)
 		}
+
+		err = r.parseDates(ctx, &user, createdAtRaw, updatedAtRaw)
+		if err != nil {
+			return nil, errs.ErrFindingUsers.SetDetailFromString(constants.ParsingError)
+		}
+
 		users = append(users, user)
 	}
 
 	if err := rows.Err(); err != nil {
 		r.log.LogError(ctx, "repository", "GetAllUsers", err)
-		return nil, err
+		return nil, errs.ErrFindingUsers.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
 	}
 
 	return users, nil
@@ -64,15 +72,22 @@ func (r *userRepository) GetAllUsers(ctx context.Context) ([]model.User, error) 
 
 func (r *userRepository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	var user model.User
+	var createdAtRaw []uint8
+	var updatedAtRaw []uint8
 	err := r.db.
-		QueryRowContext(ctx, "SELECT id, username, created_at, updated_at FROM users WHERE id= $1", id).
-		Scan(&user.Id, &user.Username, &user.CreatedAt, &user.UpdatedAt)
+		QueryRowContext(ctx, "SELECT id, username, created_at, updated_at FROM users WHERE id= ?", id).
+		Scan(&user.Id, &user.Username, &createdAtRaw, &updatedAtRaw)
 	if err == sql.ErrNoRows {
 		r.log.LogError(ctx, "repository", "GetUserByID", errs.ErrUserNotFound)
 		return nil, errs.ErrUserNotFound
 	} else if err != nil {
 		r.log.LogError(ctx, "repository", "GetUserByID", err)
 		return nil, errs.ErrFindingUserByID.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
+	}
+
+	err = r.parseDates(ctx, &user, createdAtRaw, updatedAtRaw)
+	if err != nil {
+		return nil, errs.ErrFindingUsers.SetDetailFromString(constants.ParsingError)
 	}
 
 	return &user, nil
@@ -83,7 +98,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user *model.User) error
 	user.UpdatedAt = time.Now()
 
 	_, err := r.db.ExecContext(ctx,
-		"INSERT INTO users (id, username, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)",
+		"INSERT INTO users (id, username, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
 		user.Id, user.Username, user.Password, user.CreatedAt, user.UpdatedAt,
 	)
 	if err != nil {
@@ -98,7 +113,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, user *model.User) error
 	user.UpdatedAt = time.Now()
 
 	_, err := r.db.ExecContext(ctx,
-		"UPDATE users SET username = $1, password = $2, updated_at = $3 WHERE id = $4",
+		"UPDATE users SET username = ?, password = ?, updated_at = ? WHERE id = ?",
 		user.Username, user.Password, user.UpdatedAt, user.Id,
 	)
 	if err != nil {
@@ -110,7 +125,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, user *model.User) error
 }
 
 func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
-	result, err := r.db.ExecContext(ctx, "DELETE FROM users WHERE id = $1", id)
+	result, err := r.db.ExecContext(ctx, "DELETE FROM users WHERE id = ?", id)
 	if err != nil {
 		r.log.LogError(ctx, "repository", "DeleteUser", err)
 		return errs.ErrDeletingUser.SetDetailFromString(constants.UnexpectedDatabaseErrorMessage)
@@ -122,5 +137,20 @@ func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
 		return errs.ErrDeletingUser.SetDetailFromString(constants.NoUsersToDelete)
 	}
 
+	return nil
+}
+
+func (r *userRepository) parseDates(ctx context.Context, u *model.User, createdDate []uint8, updatedDate []uint8) error {
+	var err error
+	u.CreatedAt, err = time.Parse(time.DateTime, string(createdDate))
+	if err != nil {
+		r.log.LogError(ctx, "repository", "GetAllUsers", err)
+		return err
+	}
+	u.UpdatedAt, err = time.Parse(time.DateTime, string(updatedDate))
+	if err != nil {
+		r.log.LogError(ctx, "repository", "GetAllUsers", err)
+		return err
+	}
 	return nil
 }
