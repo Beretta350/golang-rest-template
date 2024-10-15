@@ -35,9 +35,11 @@ var (
 
 // LoadConfig loads the configuration from a .env file
 func LoadConfig(env string) (*Config, error) {
-	configPath := filepath.Join(basepath, env+".env")
-	if err := godotenv.Load(configPath); err != nil {
-		return nil, err
+	if env == "local" {
+		configPath := filepath.Join(basepath, env+".env")
+		if err := godotenv.Load(configPath); err != nil {
+			return nil, err
+		}
 	}
 
 	config := Config{
