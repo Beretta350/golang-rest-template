@@ -18,6 +18,7 @@ func InitDatabase(cfg *config.DatabaseConfig) (*sql.DB, error) {
 	switch cfg.Type {
 	case "mysql":
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
+		fmt.Println("connection:", dsn)
 		sqlDB, err = sql.Open("mysql", dsn)
 	default:
 		return nil, fmt.Errorf("unsupported database type: %s", cfg.Type)
