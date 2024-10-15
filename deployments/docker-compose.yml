@@ -37,4 +37,4 @@ services:
             interval: 5s     # Check every 5 seconds
             timeout: 10s      # Timeout after 10 seconds
             retries: 3        # Mark as unhealthy after 3 failed attempts
-            start_period: 5s # Wait 10 seconds before starting health checks
+            start_period: 5s # Wait 5 seconds before starting health checks
