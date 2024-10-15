@@ -33,7 +33,7 @@ services:
             - ../scripts/database/mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql:ro
         healthcheck:
             test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=root"]
-            interval: 30s    # How often to perform the check
+            interval: 5s    # How often to perform the check
             timeout: 10s     # Time to wait for the check to respond
             retries: 3       # How many times to try before considering the service unhealthy
             start_period: 5s # Time to wait before starting the health checks after the container starts
