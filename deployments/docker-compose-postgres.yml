@@ -14,7 +14,8 @@ services:
             - DB_PASSWORD=root
             - DB_NAME=rest-template
         depends_on:
-            - postgresdatabase
+            postgresdatabase:
+                condition: service_healthy
         ports:
             - 8080:8080
 
@@ -32,7 +33,8 @@ services:
             - ./database/data/postgres:/var/lib/postgresql/data
             - ../scripts/database/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql:ro
         healthcheck:
-          test: [ "CMD-SHELL", "sh -c 'pg_isready -U root -d rest-template'" ]
-          interval: 10s
-          timeout: 5s
-          retries: 3
+            test: ["CMD", "pg_isready", "-U", "your_user", "-d", "rest-template"]
+            interval: 5s     # Check every 5 seconds
+            timeout: 10s      # Timeout after 10 seconds
+            retries: 3        # Mark as unhealthy after 3 failed attempts
+            start_period: 5s # Wait 5 seconds before starting health checks
